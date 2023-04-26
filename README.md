@@ -25,8 +25,8 @@ r←d.draw y
 and `y` contains integers between 0 and 255 (inclusive).
 
 `r` is either 0 or 1:
-- 0: failed to draw 
-- 1: continue drawing
+- 0: window is closed
+- 1: window is not closed
 
 ```
 d←adisp.window
