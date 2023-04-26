@@ -65,9 +65,9 @@
 
   ∇ r←Draw img;siz;buf
     :Access Public
-
-    :If stop ⋄ r←0 ⋄ :Return ⋄ :EndIf
-    r←1
+    
+    r←0                                   
+    :If stop≡1 ⋄ :Return ⋄ :EndIf
 
     :Select ≢⍴img
     :Case 2 ⋄ img←(,⍤0)img
@@ -84,12 +84,13 @@
     :EndSelect
 
     :While id≡'' ⋄ ⎕DL 0.05 ⋄ :EndWhile
-
+    
     siz←1 ⎕JSON 2↑⍴img
-    {}hr.WebSocketSend id siz 1 1
-
     buf←255,,img
-    {}hr.WebSocketSend id buf 1 2
+    r←siz{0::0
+      _←hr.WebSocketSend id ⍺ 1 1
+      1⊣hr.WebSocketSend id ⍵ 1 2
+    }buf
   ∇
 
   ∇ OnUpgrade arg
