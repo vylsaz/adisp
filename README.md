@@ -21,6 +21,7 @@ r←d.draw y
 - 2: grayscale and alpha
 - 3: RGB
 - 4: RGBA
+
 and `y` contains integers between 0 and 255 (inclusive).
 
 `r` is either 0 or 1:
