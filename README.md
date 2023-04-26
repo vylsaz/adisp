@@ -14,7 +14,7 @@ d←d.MakeWindow y
 `y` is the `(height,width)` of the new window.
 
 ```
-r←d.draw y
+r←d.Draw y
 ```
 `y` is an array of shape `(rows,cols,⍵)` where ⍵ can be: 
 - ⍬ or 1: grayscale
