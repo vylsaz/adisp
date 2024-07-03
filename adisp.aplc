@@ -4,58 +4,54 @@
   :Field Public  id←''
   :Field Public  hr
   :Field Private stop←0
+  :Field Private size←0 0
 
   GetHTML←{
-    h←'<!DOCTYPE html>'
-    h,←'<html>'
-    h,←'<head>'
-    h,←'<title>Array Display</title>'
-    h,←'<meta charset="UTF-8">'
-    h,←'<style>'
-    h,←'canvas {'
-    h,←'image-rendering: pixelated;'
-    h,←'width:  100%;'
-    h,←'height: 100%;'
-    h,←'}'
-    h,←'</style>'
-    h,←'</head>'
-    h,←'<body>'
-    h,←'<canvas id="MyCanvas"></canvas>'
-    h,←'<script>'
+    h←'<!DOCTYPE html><html>'
+    h,←'<head><title>Array Display</title><meta charset="UTF-8">'
+    h,←'<style>*{margin:0;padding:0;background-color:black;}'
+    h,←'div{display:grid;height:100%;}canvas{margin:auto;'
+    h,←'object-fit:contain;image-rendering:pixelated;'
+    h,←'width:100%;height:100vh;}</style></head>'
+    h,←'<body><div><canvas id="MyCanvas"></canvas></div><script>'
+    h,←'</script></body></html>'
+    h
+  }
+
+  GetJS←{
+    h←''
     h,←'const socket = new WebSocket("ws://dyalog_root/");'
     h,←'const canvas = document.getElementById("MyCanvas");'
     h,←'const ctx = canvas.getContext("2d");'
     h,←'let img = new ImageData(canvas.width, canvas.height);'
     h,←'let q = Promise.resolve();'
     h,←'socket.addEventListener("message", e => {'
-    h,←'q = q.then(async () => {'
-    h,←'if (typeof e.data === "string") {'
-    h,←'const [h, w] = JSON.parse(e.data);'
-    h,←'canvas.height = h;'
-    h,←'canvas.width = w;'
-    h,←'}'
-    h,←'else if (e.data instanceof Blob) {'
-    h,←'const buf = await e.data.arrayBuffer();'
-    h,←'const arr = new Uint8ClampedArray(buf, 1);'
-    h,←'img = new ImageData(arr, canvas.width);'
-    h,←'}'
-    h,←'});'
+    h,←' q = q.then(async () => {'
+    h,←'  if (typeof e.data === "string") {'
+    h,←'   const [h, w] = JSON.parse(e.data);'
+    h,←'   canvas.height = h;'
+    h,←'   canvas.width = w;'
+    h,←'  } else if (e.data instanceof Blob) {'
+    h,←'   const buf = await e.data.arrayBuffer();'
+    h,←'   const arr = new Uint8ClampedArray(buf, 0, buf.byteLength-4);'
+    h,←'   img = new ImageData(arr, canvas.width);'
+    h,←'  }'
+    h,←' });'
     h,←'});'
     h,←'const draw = t => {'
-    h,←'ctx.putImageData(img, 0, 0);'
-    h,←'window.requestAnimationFrame(draw);'
+    h,←' ctx.putImageData(img, 0, 0);'
+    h,←' window.requestAnimationFrame(draw);'
     h,←'};'
     h,←'window.requestAnimationFrame(draw);'
-    h,←'</script>'
-    h,←'</body>'
-    h,←'</html>'
     h
   }
+
   :Field Private Shared ReadOnly HTML←GetHTML 0
+  :Field Private Shared ReadOnly JS←GetJS 0
 
   ∇ t←new
     :Access Public Shared
-    t←⎕NEW adisp
+    t←⎕NEW ⎕THIS
   ∇
 
   ∇ b←isClosed
@@ -63,32 +59,9 @@
     b←stop
   ∇
 
-  ∇ r←Draw img;siz;buf
-    :Access Public
-
-    r←0
-    :If stop≡1 ⋄ :Return ⋄ :EndIf
-
-    :Select ≢⍴img
-    :Case 2 ⋄ img←(,⍤0)img
-    :Case 3
-    :Else ⋄ 'rank of an image should be 2 or 3'⎕SIGNAL 4
-    :EndSelect
-
-    :Select ⊢⌿⍴img
-    :Case 1 ⋄ img←({255,⍨3⍴⍵}⍤1)img
-    :Case 2 ⋄ img←({⍵[0 0 0 1]}⍤1)img
-    :Case 3 ⋄ img←({⍵,255}⍤1)img
-    :Case 4
-    :Else ⋄ 'need 1 2 3 or 4 values for color'⎕SIGNAL 5
-    :EndSelect
-
-    siz←1 ⎕JSON 2↑⍴img
-    buf←255,,img
-    r←siz{6::0
-      _←hr.WebSocketSend id ⍺ 1 1
-      1⊣hr.WebSocketSend id ⍵ 1 2
-    }buf
+  ∇ OnLoad arg;r
+    :Access Private
+    hr.ExecuteJavaScript JS
   ∇
 
   ∇ OnUpgrade arg
@@ -104,10 +77,13 @@
   ∇ t←MakeWindow win_size;ev;pa;msg
     :Access Public
     :If id≢'' ⋄ 'Reload the window'⎕SIGNAL 16 ⋄ :EndIf
-    ev←('WebSocketUpgrade' 'OnUpgrade')('Close' 'OnClose')
-    pa←('Event',⍥⊆ev)('Coord' 'Pixel')('Size'win_size)('HTML'HTML)
+    ev←('WebSocketUpgrade' 'OnUpgrade')('LoadEnd' 'OnLoad')('Close' 'OnClose')
+    pa←('Event',⍥⊆ev)('HTML' HTML)
+    :If 0≢win_size
+      pa,←('Coord' 'Pixel')('Size'win_size)
+    :EndIf
     {_←'hr'⎕WC'HTMLRenderer',⍥⊆⍵ ⋄ ⎕DQ'hr'}&pa
-    :While (id≡'')∧stop≢1 ⋄ ⎕DL 0.05 ⋄ :EndWhile
+    :While (id≡'')∧stop≢1 ⋄ ⎕DL 0.01 ⋄ :EndWhile
     t←⎕THIS
   ∇
 
@@ -118,12 +94,65 @@
 
   ∇ w←window
     :Access Public Shared
-    w←new.MakeWindow 740 700
+    w←new.MakeWindow 0
   ∇
 
-  ∇ r←FromF f
+  I32FromI8←{323 ⎕DR ⍵,4⍴¯128}
+  I8FromI32←{83 ⎕DR ⍵,¯2147483648}
+
+  ∇ r←Draw img;new_size
+    :Access Public
+    r←0
+    :If stop≡1 ⋄ :Return ⋄ :EndIf
+    new_size←2↑⍴img
+    :If 0≡×/new_size
+      ('image shape: ',⍕⍴img)⎕SIGNAL 5
+    :EndIf
+    :If new_size≢size
+      r←{6::0 ⋄ 1⊣hr.WebSocketSend id ⍵ 1 1}1 ⎕JSON new_size
+      size←new_size
+    :EndIf
+    r←{6::0 ⋄ 1⊣hr.WebSocketSend id ⍵ 1 2}I8FromI32,img
+  ∇
+
+  ∇ r←RGBA x;s
     :Access Public Shared
-    r←⌊255×f
+    s←¯1↓⍴x
+    r←s⍴I32FromI8,¯128+256|128+⌊255×x
+  ∇
+
+  ∇ r←RGB x;s
+    :Access Public Shared
+    s←¯1↓⍴x
+    r←s⍴I32FromI8,(,∘¯1⍤1)¯128+256|128+⌊255×x
+  ∇
+
+  ∇ r←Gray x;s
+    :Access Public Shared
+    s←⍴x
+    r←s⍴I32FromI8,((¯1,⍨3∘⍴)⍤0)¯128+256|128+⌊255×x
+  ∇
+
+  :Field Private Shared ReadOnly HEX←'0123456789ABCDEF'
+  FromHex←(16 16⊥HEX⍳⊢)⍤1
+
+  ∇ r←Hex x
+    :Access Public Shared
+    x←1 ⎕C x
+    :Select ≢x
+    :Case 3 ⋄ x←255,⍨FromHex 3 1⍴x
+    :Case 6 ⋄ x←255,⍨FromHex 3 2⍴x
+    :Case 4 ⋄ x←FromHex 4 1⍴x
+    :Case 8 ⋄ x←FromHex 4 2⍴x
+    :Else ⋄ ⎕SIGNAL 5
+    :EndSelect
+    r←⊃I32FromI8 ¯128+256|128+x
+  ∇
+
+  ∇ r←ToRGBA x;s
+    :Access Public Shared
+    s←(⍴x),4
+    r←255÷⍨256|s⍴I8FromI32,x
   ∇
 
 :EndClass
