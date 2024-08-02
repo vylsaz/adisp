@@ -6,6 +6,8 @@
   :Field Private stop←0
   :Field Private size←0 0
 
+  :Field Private Shared ReadOnly IS19←⊃'19.'⍷1⊃#⎕WG'APLVersion'
+
   GetHTML←{
     h←'<!DOCTYPE html><html>'
     h,←'<head><title>Array Display</title><meta charset="UTF-8">'
@@ -14,6 +16,7 @@
     h,←'object-fit:contain;image-rendering:pixelated;'
     h,←'width:100%;height:100vh;}</style></head>'
     h,←'<body><div><canvas id="MyCanvas"></canvas></div><script>'
+    h,←{IS19: '' ⋄ GetJS 0}0
     h,←'</script></body></html>'
     h
   }
@@ -88,7 +91,10 @@
   ∇ MakeWindow args;ev;pa;msg
     :Access Public
     :Implements Constructor
-    ev←('WebSocketUpgrade' 'OnUpgrade')('LoadEnd' 'OnLoad')('Close' 'OnClose')
+    ev←('WebSocketUpgrade' 'OnUpgrade')('Close' 'OnClose')
+    :If IS19
+      ev,←⊂('LoadEnd' 'OnLoad')
+    :EndIf
     pa←('Event',⍥⊆ev)('HTML' HTML),args
     {_←'hr'⎕WC'HTMLRenderer',⍥⊆⍵ ⋄ ⎕DQ'hr'}&pa
     :While (id≡'')∧stop≢1 ⋄ ⎕DL 0.01 ⋄ :EndWhile
