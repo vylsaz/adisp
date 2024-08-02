@@ -6,30 +6,25 @@ Inspired by [APixeL](https://github.com/TabbyTranspose/APixeL)
 ## Usage
 
 ```
-d ← adisp.window
-```
-The same as `adisp.new.MakeWindow 0`
-
-```
-d ← adisp.Window y
-```
-The same as `adisp.new.MakeWindow y`
-
-```
-d ← adisp.new
+d ← adisp.New a
 ```
 `d` is an instance of class adisp.
+`a` are args to be used when creating HTMLRenderer.
 
 ```
-d ← d.MakeWindow y
+d ← adisp.window
 ```
-`y` is the `(height,width)` of the new window. 
-If `y` is `0`, use the default of HTMLRenderer.
+The same as `New ⍬`
 
 ```
-r ← d.Draw y
+d ← adisp.Window s
 ```
-`y` is an array of shape `(height,width)` containing 
+The same as `New ('Coord' 'Pixel')('Size' s)`
+
+```
+r ← d.Draw c
+```
+`c` is an array of shape `(height,width)` containing 
 32-bit integers, which are the colors of each pixel.
 
 `r` is either 0 or 1:
@@ -37,16 +32,16 @@ r ← d.Draw y
 - 1: window is not closed
 
 ```
-c ← adisp.RGBA y
+c ← adisp.RGBA f
 ```
-Convert the rank 1 cells of `y` (0.0-1.0 float `r g b a`) to the 
-corresponding color array of shape `(¯1↓⍴y)`.
+Convert the rank 1 cells of `f` (0.0-1.0 float `r g b a`) to the 
+corresponding color array of shape `(¯1↓⍴f)`.
 
 ```
-c ← adisp.RGB y
+c ← adisp.RGB f
 ```
-Convert the rank 1 cells of `y` (0.0-1.0 float `r g b`) to the 
-corresponding color array of shape `(¯1↓⍴y)`.
+Convert the rank 1 cells of `f` (0.0-1.0 float `r g b`) to the 
+corresponding color array of shape `(¯1↓⍴f)`.
 
 ```
 c ← adisp.Gray y
@@ -55,9 +50,9 @@ Convert each of `y` (luminance, 0.0-1.0 float) to the corresponding
 color integer.
 
 ```
-c ← adisp.Hex y
+c ← adisp.Hex h
 ```
-`y` is color in one of these hexadecimal forms: 
+`h` is color in one of these hexadecimal forms: 
 - `'RGB'` (each letter is duplicated, = `'RRGGBB'`)
 - `'RGBA'` (each letter is duplicated, = `'RRGGBBAA'`)
 - `'RRGGBB'`
@@ -66,9 +61,9 @@ c ← adisp.Hex y
 `c` is the corresponding color.
 
 ```
-r ← adisp.ToRGBA y
+f ← adisp.ToRGBA c
 ```
-Convert color `y` back to the RGBA components `r`.
+Convert color `c` back to the RGBA components `f`.
 
 ## Example
 Game of Life:

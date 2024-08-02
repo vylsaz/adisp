@@ -1,8 +1,8 @@
 ﻿:Class adisp
   (⎕IO ⎕ML)←0 1
 
-  :Field Public  id←''
   :Field Public  hr
+  :Field Private id←''
   :Field Private stop←0
   :Field Private size←0 0
 
@@ -21,22 +21,23 @@
   GetJS←{
     h←''
     h,←'const socket = new WebSocket("ws://dyalog_root/");'
+    h,←'socket.binaryType = "arraybuffer";'
     h,←'const canvas = document.getElementById("MyCanvas");'
+    h,←'canvas.addEventListener("contextmenu", e => {'
+    h,←' e.preventDefault();'
+    h,←'});'
     h,←'const ctx = canvas.getContext("2d");'
     h,←'let img = new ImageData(canvas.width, canvas.height);'
-    h,←'let q = Promise.resolve();'
     h,←'socket.addEventListener("message", e => {'
-    h,←' q = q.then(async () => {'
-    h,←'  if (typeof e.data === "string") {'
-    h,←'   const [h, w] = JSON.parse(e.data);'
-    h,←'   canvas.height = h;'
-    h,←'   canvas.width = w;'
-    h,←'  } else if (e.data instanceof Blob) {'
-    h,←'   const buf = await e.data.arrayBuffer();'
-    h,←'   const arr = new Uint8ClampedArray(buf, 0, buf.byteLength-4);'
-    h,←'   img = new ImageData(arr, canvas.width);'
-    h,←'  }'
-    h,←' });'
+    h,←' if (typeof e.data === "string") {'
+    h,←'  const [h, w] = JSON.parse(e.data);'
+    h,←'  canvas.height = h;'
+    h,←'  canvas.width = w;'
+    h,←' } else if (e.data instanceof ArrayBuffer) {'
+    h,←'  const buf = e.data;'
+    h,←'  const arr = new Uint8ClampedArray(buf, 0, buf.byteLength-4);'
+    h,←'  img = new ImageData(arr, canvas.width);'
+    h,←' }'
     h,←'});'
     h,←'const draw = t => {'
     h,←' ctx.putImageData(img, 0, 0);'
@@ -49,9 +50,19 @@
   :Field Private Shared ReadOnly HTML←GetHTML 0
   :Field Private Shared ReadOnly JS←GetJS 0
 
-  ∇ t←new
+  ∇ t←New args
     :Access Public Shared
-    t←⎕NEW ⎕THIS
+    t←⎕NEW ⎕THIS args
+  ∇
+
+  ∇ w←Window win_size
+    :Access Public Shared
+    w←New('Coord' 'Pixel')('Size'win_size)
+  ∇
+
+  ∇ w←window
+    :Access Public Shared
+    w←New ⍬
   ∇
 
   ∇ b←isClosed
@@ -74,27 +85,13 @@
     stop←1
   ∇
 
-  ∇ t←MakeWindow win_size;ev;pa;msg
+  ∇ MakeWindow args;ev;pa;msg
     :Access Public
-    :If id≢'' ⋄ 'Reload the window'⎕SIGNAL 16 ⋄ :EndIf
+    :Implements Constructor
     ev←('WebSocketUpgrade' 'OnUpgrade')('LoadEnd' 'OnLoad')('Close' 'OnClose')
-    pa←('Event',⍥⊆ev)('HTML' HTML)
-    :If 0≢win_size
-      pa,←('Coord' 'Pixel')('Size'win_size)
-    :EndIf
+    pa←('Event',⍥⊆ev)('HTML' HTML),args
     {_←'hr'⎕WC'HTMLRenderer',⍥⊆⍵ ⋄ ⎕DQ'hr'}&pa
     :While (id≡'')∧stop≢1 ⋄ ⎕DL 0.01 ⋄ :EndWhile
-    t←⎕THIS
-  ∇
-
-  ∇ w←Window win_size
-    :Access Public Shared
-    w←new.MakeWindow win_size
-  ∇
-
-  ∇ w←window
-    :Access Public Shared
-    w←new.MakeWindow 0
   ∇
 
   I32FromI8←{323 ⎕DR ⍵,4⍴¯128}
