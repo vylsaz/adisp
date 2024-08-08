@@ -6,9 +6,9 @@
   :Field Private stop←0
   :Field Private size←0 0
 
-  :Field Private Shared ReadOnly IS19←⊃'19.'⍷1⊃#⎕WG'APLVersion'
+  :Field Private Shared ReadOnly LOAD←18<⍎⊃'.'(≠⊆⊢)1⊃#⎕WG'APLVersion'
 
-  GetHTML←{
+  Html←{
     h←'<!DOCTYPE html><html>'
     h,←'<head><title>Array Display</title><meta charset="UTF-8">'
     h,←'<style>*{margin:0;padding:0;background-color:black;}'
@@ -16,12 +16,12 @@
     h,←'object-fit:contain;image-rendering:pixelated;'
     h,←'width:100%;height:100vh;}</style></head>'
     h,←'<body><div><canvas id="MyCanvas"></canvas></div><script>'
-    h,←{IS19: '' ⋄ GetJS 0}0
+    h,←{LOAD: '' ⋄ Js 0}0
     h,←'</script></body></html>'
     h
   }
 
-  GetJS←{
+  Js←{
     h←''
     h,←'const socket = new WebSocket("ws://dyalog_root/");'
     h,←'socket.binaryType = "arraybuffer";'
@@ -50,9 +50,6 @@
     h
   }
 
-  :Field Private Shared ReadOnly HTML←GetHTML 0
-  :Field Private Shared ReadOnly JS←GetJS 0
-
   ∇ t←New args
     :Access Public Shared
     t←⎕NEW ⎕THIS args
@@ -75,7 +72,7 @@
 
   ∇ OnLoad arg;r
     :Access Private
-    hr.ExecuteJavaScript JS
+    hr.ExecuteJavaScript Js 0
   ∇
 
   ∇ OnUpgrade arg
@@ -92,10 +89,10 @@
     :Access Public
     :Implements Constructor
     ev←('WebSocketUpgrade' 'OnUpgrade')('Close' 'OnClose')
-    :If IS19
-      ev,←⊂('LoadEnd' 'OnLoad')
+    :If LOAD
+      ev,←⊂'LoadEnd' 'OnLoad'
     :EndIf
-    pa←('Event',⍥⊆ev)('HTML' HTML),args
+    pa←('Event',⍥⊆ev)('HTML'(Html 0)),args
     {_←'hr'⎕WC'HTMLRenderer',⍥⊆⍵ ⋄ ⎕DQ'hr'}&pa
     :While (id≡'')∧stop≢1 ⋄ ⎕DL 0.01 ⋄ :EndWhile
   ∇
@@ -136,8 +133,7 @@
     r←s⍴I32FromI8,((¯1,⍨3∘⍴)⍤0)¯128+256|128+⌊255×x
   ∇
 
-  :Field Private Shared ReadOnly HEX←'0123456789ABCDEF'
-  FromHex←(16 16⊥HEX⍳⊢)⍤1
+  FromHex←(16 16⊥'0123456789ABCDEF'⍳⊢)⍤1
 
   ∇ r←Hex x
     :Access Public Shared
